@@ -4,6 +4,12 @@ output: html_notebook
 ---
 
 ```{r}
+# load libraries
+library(tidyverse)
+library(caret)
+library(ggplot2)
+library(corrplot)
+library(dplyr)
 # load data
 
 train <- read.csv("playground-series-s6e3/train.csv")
@@ -16,14 +22,55 @@ test  <- read.csv("playground-series-s6e3/test.csv")
 head(train) 
 names(train) # column names
 ```
+
 ```{r}
 sum(is.na(train))  # no na values
 sum(is.na(test))  # no na values
 ```
-```{r}
-# TODO: one hot encode non-numeric columns
 
+```{r}
+# summary of data
+summary(train)
 ```
+
+```{r}
+# range of vals for numerical cols
+numeric_cols <- names(train)[sapply(train, is.numeric)]
+numeric_cols <- setdiff(numeric_cols, "id")
+
+range_compare <- data.frame(
+  feature = numeric_cols,
+  train_min = sapply(train[numeric_cols], min),
+  train_max = sapply(train[numeric_cols], max),
+  test_min  = sapply(test[numeric_cols], min),
+  test_max  = sapply(test[numeric_cols], max)
+)
+
+print(range_compare)
+```
+
+```{r}
+# see values for cat cols
+## see which we have to make 0/1 and which to one
+# hot encode
+
+cat_cols <- names(train)[sapply(train, is.character)]
+
+for(col in cat_cols){
+
+  cat("\n====================\n")
+  cat("Column:", col, "\n")
+
+  cat("\nTrain values:\n")
+  print(unique(train[[col]]))
+
+  cat("\nTest values:\n")
+  print(unique(test[[col]]))
+
+}
+```
+
+
 
 
 
