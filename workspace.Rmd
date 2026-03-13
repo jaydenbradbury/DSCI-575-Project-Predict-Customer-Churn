@@ -18,6 +18,8 @@ test  <- read.csv("playground-series-s6e3/test.csv")
 # target variable is called Churn
 ```
 
+## LOOK AT DATA
+
 ```{r}
 head(train) 
 names(train) # column names
@@ -70,8 +72,28 @@ for(col in cat_cols){
 }
 ```
 
+## DATA CLEANING
 
+```{r}
+# make yes/no cols into binary cols
 
+train <- train |>
+  mutate(
+    Partner = ifelse(Partner == "Yes", 1, 0),
+    Dependents = ifelse(Dependents == "Yes", 1, 0),
+    PhoneService = ifelse(PhoneService == "Yes", 1, 0),
+    PaperlessBilling = ifelse(PaperlessBilling == "Yes", 1, 0),
+    Churn = ifelse(Churn == "Yes", 1, 0)
+  )
+
+test <- test |>
+  mutate(
+    Partner = ifelse(Partner == "Yes", 1, 0),
+    Dependents = ifelse(Dependents == "Yes", 1, 0),
+    PhoneService = ifelse(PhoneService == "Yes", 1, 0),
+    PaperlessBilling = ifelse(PaperlessBilling == "Yes", 1, 0)
+  )
+```
 
 
 
