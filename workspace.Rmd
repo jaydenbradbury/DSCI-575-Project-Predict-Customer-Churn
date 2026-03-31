@@ -79,6 +79,7 @@ for(col in cat_cols){
 
 train <- train |>
   mutate(
+    gender = ifelse(gender == "Male", 1, 0),
     Partner = ifelse(Partner == "Yes", 1, 0),
     Dependents = ifelse(Dependents == "Yes", 1, 0),
     PhoneService = ifelse(PhoneService == "Yes", 1, 0),
@@ -88,6 +89,7 @@ train <- train |>
 
 test <- test |>
   mutate(
+    gender = ifelse(gender == "Male", 1, 0), 
     Partner = ifelse(Partner == "Yes", 1, 0),
     Dependents = ifelse(Dependents == "Yes", 1, 0),
     PhoneService = ifelse(PhoneService == "Yes", 1, 0),
@@ -96,5 +98,36 @@ test <- test |>
 ```
 
 
+```{r}
+# one hot encode the rest of the variables
+
+train <- train |>
+  mutate(
+    MultipleLines = as.factor(MultipleLines),
+    InternetService = as.factor(InternetService),
+    OnlineSecurity = as.factor(OnlineSecurity),
+    OnlineBackup = as.factor(OnlineBackup),
+    DeviceProtection = as.factor(DeviceProtection),
+    TechSupport = as.factor(TechSupport),
+    StreamingTV = as.factor(StreamingTV),
+    StreamingMovies = as.factor(StreamingMovies),
+    Contract = as.factor(Contract),
+    PaymentMethod = as.factor(PaymentMethod)
+  )
+
+test <- test |>
+  mutate(
+    MultipleLines = as.factor(MultipleLines),
+    InternetService = as.factor(InternetService),
+    OnlineSecurity = as.factor(OnlineSecurity),
+    OnlineBackup = as.factor(OnlineBackup),
+    DeviceProtection = as.factor(DeviceProtection),
+    TechSupport = as.factor(TechSupport),
+    StreamingTV = as.factor(StreamingTV),
+    StreamingMovies = as.factor(StreamingMovies),
+    Contract = as.factor(Contract),
+    PaymentMethod = as.factor(PaymentMethod)
+  )
+```
 
 
