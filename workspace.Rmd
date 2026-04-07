@@ -143,9 +143,19 @@ test_scaled[, numeric_cols] <- predict(preproc, test[, numeric_cols])
 ```
 
 ```{r}
+matrix <- cor(train_scaled[numeric_cols])
+corrplot(matrix, method = "color")
+```
+
+
+```{r}
 summary(train_scaled) # mean 0
 # data is imbalanced, mean of churn 0.22 so we may have to bootstrap or be careful with results
 ```
+```{r}
+
+```
+
 
 ```{r}
 # dont need id and get rid of churn for training
@@ -194,9 +204,9 @@ y_train_yn <- factor(y_train, levels = c(0, 1), labels = c("No", "Yes"))
 # Train model
 rf_model <- randomForest(
   x = x_train,
-  y = y_train)yn,
+  y = y_train_yn,
   ntree = 100,
-  mtry = floor(sqrt(ncol(x_train)))
+  mtry = floor(sqrt(ncol(x_train))),
   do.trace = 10
 )
 
@@ -213,11 +223,24 @@ write.csv(rf_results, "results_randomforest.csv", row.names = FALSE)
 ```
 
 ```{r}
+
+```
+
+
+```{r}
 library(xgboost)
 
 # Create DMatrix
-dtrain <- xgb.DMatrix(data = x_train, label = y_train_num)
+dtrain <- xgb.DMatrix(data = x_train, label = y_train)
 dtest  <- xgb.DMatrix(data = x_test)
+
+# hyperparameters we can gridsearch/randomsearch
+# max_depth
+# learning_rate
+# objective
+# max_leaves
+# min_split
+# gamma
 
 # Train model
 xgb_model <- xgboost(
