@@ -130,4 +130,118 @@ test <- test |>
   )
 ```
 
+```{r}
+numeric_cols <- names(train)[sapply(train, is.numeric)] # numerical cols
+numeric_cols <- setdiff(numeric_cols, c("id", "Churn"))
+
+preproc <- preProcess(train[, numeric_cols], method = c("center", "scale")) # scalar
+
+train_scaled <- train # scale train
+train_scaled[, numeric_cols] <- predict(preproc, train[, numeric_cols])
+test_scaled <- test # scale test
+test_scaled[, numeric_cols] <- predict(preproc, test[, numeric_cols])
+```
+
+```{r}
+summary(train_scaled) # mean 0
+# data is imbalanced, mean of churn 0.22 so we may have to bootstrap or be careful with results
+```
+
+```{r}
+# dont need id and get rid of churn for training
+x_train <- train_scaled %>% select(-id, -Churn)
+y_train <- train_scaled$Churn
+x_test <- test_scaled %>% select(-id)
+
+# one-hot encode to numerical values valid for model
+x_train <- model.matrix(~ . -1, data = x_train)
+x_test  <- model.matrix(~ . -1, data = x_test)
+```
+
+
+```{r}
+dim(x_train)
+dim(y_train)
+```
+
+```{r}
+# logistic regression
+log_model <- glm(
+  y_train ~ .,
+  data = as.data.frame(x_train),
+  family = "binomial"
+)
+
+# Predict probabilities
+log_preds <- predict(
+  log_model,
+  newdata = as.data.frame(x_test),
+  type = "response"
+)
+
+# Save results
+log_results <- data.frame(
+  id = test$id,
+  Churn = log_preds
+)
+
+write.csv(log_results, "results_logistic.csv", row.names = FALSE)
+```
+
+```{r}
+library(randomForest)
+y_train_yn <- factor(y_train, levels = c(0, 1), labels = c("No", "Yes"))
+# Train model
+rf_model <- randomForest(
+  x = x_train,
+  y = y_train)yn,
+  ntree = 100,
+  mtry = floor(sqrt(ncol(x_train)))
+  do.trace = 10
+)
+
+# Predict probabilities (class "Yes")
+rf_preds <- predict(rf_model, x_test, type = "prob")[, "Yes"]
+
+# Save results
+rf_results <- data.frame(
+  id = test$id,
+  Churn = rf_preds
+)
+
+write.csv(rf_results, "results_randomforest.csv", row.names = FALSE)
+```
+
+```{r}
+library(xgboost)
+
+# Create DMatrix
+dtrain <- xgb.DMatrix(data = x_train, label = y_train_num)
+dtest  <- xgb.DMatrix(data = x_test)
+
+# Train model
+xgb_model <- xgboost(
+  data = dtrain,
+  nrounds = 100,
+  objective = "binary:logistic",
+  eval_metric = "logloss",
+  max_depth = 6,
+  eta = 0.1,
+  verbose = 1
+)
+
+# Predict probabilities
+xgb_preds <- predict(xgb_model, dtest)
+
+# Save results
+xgb_results <- data.frame(
+  id = test$id,
+  Churn = xgb_preds
+)
+
+write.csv(xgb_results, "results_xgboost.csv", row.names = FALSE)
+```
+
+
+
 
