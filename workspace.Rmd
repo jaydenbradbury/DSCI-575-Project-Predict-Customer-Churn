@@ -266,5 +266,50 @@ write.csv(xgb_results, "results_xgboost.csv", row.names = FALSE)
 ```
 
 
+## retry xgboost
+
+```{r}
+library(xgboost)
+
+# Ensure inputs are numeric matrices
+x_train <- as.matrix(x_train)
+x_test  <- as.matrix(x_test)
+
+# If y_train is a factor, convert to 0/1
+if (is.factor(y_train)) {
+  y_train <- as.numeric(y_train) - 1
+}
+
+# Create DMatrix
+dtrain <- xgb.DMatrix(data = x_train, label = y_train)
+dtest  <- xgb.DMatrix(data = x_test)
+
+# Set parameters
+params <- list(
+  objective = "binary:logistic",
+  eval_metric = "logloss",
+  max_depth = 6,
+  eta = 0.1
+)
+
+# Train model
+xgb_model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 100,
+  verbose = 1
+)
+
+# Predict probabilities
+xgb_preds <- predict(xgb_model, dtest)
+
+# Save results
+xgb_results <- data.frame(
+  id = test$id,
+  Churn = xgb_preds
+)
+
+write.csv(xgb_results, "results_xgboost.csv", row.names = FALSE)
+```
 
 
