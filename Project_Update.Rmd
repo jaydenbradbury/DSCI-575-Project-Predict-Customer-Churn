@@ -1,5 +1,5 @@
 ---
-title: "Project Update"
+title: "Project Update - Predicting Customer Churn"
 author: "Jayden Bradbury, Jonah Fallon"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -28,15 +28,105 @@ test  <- read.csv("playground-series-s6e3/test.csv")
 ```
 
 
-## Data - you should have finalized the dataset and completed any necessary data cleaning
+## Data 
+
+Our data cleaning steps are complete. All of the variables in our dataset were categorical, so most of our data cleaning involved making "Yes/No" categories into 1/0 variables, as well as one-hot encoding the other categorical variables with more than two categories. 
+
+Before fitting our model, we also scaled the data and split it into training and testing subsets.
 
 
-## Feature learning - you should have tested out a few feature extraction methods
+```{r}
+# make yes/no cols into binary cols
 
-## Model - you should have a preliminary model with some of the features in the data
+train <- train |>
+  mutate(
+    gender = ifelse(gender == "Male", 1, 0),
+    Partner = ifelse(Partner == "Yes", 1, 0),
+    Dependents = ifelse(Dependents == "Yes", 1, 0),
+    PhoneService = ifelse(PhoneService == "Yes", 1, 0),
+    PaperlessBilling = ifelse(PaperlessBilling == "Yes", 1, 0),
+    Churn = ifelse(Churn == "Yes", 1, 0)
+  )
 
-## Timeline - you should have an understanding of how well your time estimates have been and update the timeline accordingly
+test <- test |>
+  mutate(
+    gender = ifelse(gender == "Male", 1, 0), 
+    Partner = ifelse(Partner == "Yes", 1, 0),
+    Dependents = ifelse(Dependents == "Yes", 1, 0),
+    PhoneService = ifelse(PhoneService == "Yes", 1, 0),
+    PaperlessBilling = ifelse(PaperlessBilling == "Yes", 1, 0)
+  )
+```
 
-## Project expectation - you should update the project expectation based on the progress you've made so far
+```{r}
+# one hot encode the rest of the variables
 
-## Constraints - you should mention any constraints that have risen and any decisions you've made to mitigate them including any ethical implications of your application
+train <- train |>
+  mutate(
+    MultipleLines = as.factor(MultipleLines),
+    InternetService = as.factor(InternetService),
+    OnlineSecurity = as.factor(OnlineSecurity),
+    OnlineBackup = as.factor(OnlineBackup),
+    DeviceProtection = as.factor(DeviceProtection),
+    TechSupport = as.factor(TechSupport),
+    StreamingTV = as.factor(StreamingTV),
+    StreamingMovies = as.factor(StreamingMovies),
+    Contract = as.factor(Contract),
+    PaymentMethod = as.factor(PaymentMethod)
+  )
+
+test <- test |>
+  mutate(
+    MultipleLines = as.factor(MultipleLines),
+    InternetService = as.factor(InternetService),
+    OnlineSecurity = as.factor(OnlineSecurity),
+    OnlineBackup = as.factor(OnlineBackup),
+    DeviceProtection = as.factor(DeviceProtection),
+    TechSupport = as.factor(TechSupport),
+    StreamingTV = as.factor(StreamingTV),
+    StreamingMovies = as.factor(StreamingMovies),
+    Contract = as.factor(Contract),
+    PaymentMethod = as.factor(PaymentMethod)
+  )
+```
+
+```{r}
+numeric_cols <- names(train)[sapply(train, is.numeric)] # numerical cols
+numeric_cols <- setdiff(numeric_cols, c("id", "Churn"))
+
+preproc <- preProcess(train[, numeric_cols],
+                      method = c("center", "scale")) # scalar
+
+train_scaled <- train # scale train
+train_scaled[, numeric_cols] <- predict(preproc, train[, numeric_cols])
+test_scaled <- test # scale test
+test_scaled[, numeric_cols] <- predict(preproc, test[, numeric_cols])
+```
+
+## Feature learning 
+
+Because our dataset was supplied by Kaggle for a Playground competition, we had all the variables we needed to solve the problem. The dataset was synthetically generated, and there was no way for us to extract other features from the ones we were given without changing the competition definition. Therefore, we did not try any feature extraction methods.
+
+## Model 
+
+The model we have chosen to move forward with is XGBoost. Out of the models we tested (logistic regression, random forest, XGBoost), XGBoost gave us the best results.
+
+## Timeline 
+
+So far, we have met all the deadlines we have set for ourselves. The following is a timeline for our project for the rest of the semester:
+
+- **4/13 - 4/17:** Finish project report
+- **4/20 - 4/24**: Try some cross-validation techniques to better our model, start writing final report
+- **4/27 - 5/1**: Finalize model and coding work, continue final report
+- **5/4 - 5/6**: Finalize final report, submit by 5/6
+
+## Project expectation
+
+After submitting our final .csv output to Kaggle with our predictions of customer churn, we achieved an ROC-AUC of about 91.38%. So, our model is extremely good at distinguishing between customers who will leave and those who will stay.
+
+If you randomly pick one customer who churned and one who stayed, there is a 91.37% chance our XGBoost model will assign a higher probability of churn to the one who actually left.
+
+## Constraints
+
+We have no identified any ethical constraints with this project. We are not using real data, so customer privacy is not an issue. 
+
