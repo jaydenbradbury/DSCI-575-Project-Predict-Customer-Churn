@@ -1,0 +1,42 @@
+---
+title: "Project Update"
+author: "Jayden Bradbury, Jonah Fallon"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+# load libraries
+library(tidyverse)
+library(caret)
+library(ggplot2)
+library(corrplot)
+library(dplyr)
+library(DiagrammeR)
+library(caret)
+
+
+# load data
+
+train <- read.csv("playground-series-s6e3/train.csv")
+test  <- read.csv("playground-series-s6e3/test.csv")
+
+# target variable is called Churn
+```
+
+
+## Data - you should have finalized the dataset and completed any necessary data cleaning
+
+
+## Feature learning - you should have tested out a few feature extraction methods
+
+## Model - you should have a preliminary model with some of the features in the data
+
+## Timeline - you should have an understanding of how well your time estimates have been and update the timeline accordingly
+
+## Project expectation - you should update the project expectation based on the progress you've made so far
+
+## Constraints - you should mention any constraints that have risen and any decisions you've made to mitigate them including any ethical implications of your application
