@@ -10,6 +10,8 @@ library(caret)
 library(ggplot2)
 library(corrplot)
 library(dplyr)
+library(DiagrammeR)
+library(caret)
 # load data
 
 train <- read.csv("playground-series-s6e3/train.csv")
@@ -152,9 +154,7 @@ corrplot(matrix, method = "color")
 summary(train_scaled) # mean 0
 # data is imbalanced, mean of churn 0.22 so we may have to bootstrap or be careful with results
 ```
-```{r}
 
-```
 
 
 ```{r}
@@ -311,5 +311,20 @@ xgb_results <- data.frame(
 
 write.csv(xgb_results, "results_xgboost.csv", row.names = FALSE)
 ```
+
+## Visualize Results
+
+```{r}
+# a tree
+xgb.plot.tree(model= xgb_model, tree_idx = 1)
+```
+
+
+```{r}
+# feature importance
+importance_matrix <- xgb.importance(model = xgb_model)
+xgb.plot.importance(importance_matrix)
+```
+
 
 
