@@ -115,7 +115,7 @@ The model we have chosen to move forward with is XGBoost. Out of the models we t
 
 So far, we have met all the deadlines we have set for ourselves. The following is a timeline for our project for the rest of the semester:
 
-- **4/13 - 4/17:** Finish project report
+- **4/13 - 4/17:** Finish project update, submit by 4/16
 - **4/20 - 4/24**: Try some cross-validation techniques to better our model, start writing final report
 - **4/27 - 5/1**: Finalize model and coding work, continue final report
 - **5/4 - 5/6**: Finalize final report, submit by 5/6
