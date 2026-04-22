@@ -1,0 +1,62 @@
+---
+title: "Predicting Customer Churn"
+subtitle: "DSCI 575"
+author: "Jayden Bradbury, Jonah Fallon"
+date: "`r Sys.Date()`"
+format: pdf
+---
+
+```{r}
+#| echo: false
+#| include: false
+#| label: front-matter
+#| warning: false
+# clean up & set default chunk options
+rm(list = ls())
+knitr::opts_chunk$set(echo = FALSE)
+
+# packages
+library(tidyverse)
+library(caret)
+library(ggplot2)
+library(corrplot)
+library(dplyr)
+library(DiagrammeR)
+library(caret)
+
+
+# read in data 
+
+train <- read.csv("playground-series-s6e3/train.csv")
+test  <- read.csv("playground-series-s6e3/test.csv")
+
+
+```
+
+# 1. Project Description
+
+## 1.1 Research Questions
+
+## 1.2 Variables
+
+#  2. Exploratory Data Analysis (EDA)
+
+# 3. Statistical Analysis 
+
+# 4. Recommendations 
+
+# 5. Resources 
+
+# 6. Additional Considerations
+
+# Technical Appendix 
+
+\newpage
+
+### R Script
+```{r ref.label=c('front-matter')}
+#| echo: true
+#| eval: false
+
+# Reprinted code chunks used previously for analysis
+```
