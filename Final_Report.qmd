@@ -23,6 +23,10 @@ library(corrplot)
 library(dplyr)
 library(DiagrammeR)
 library(caret)
+library(xtable)
+library(knitr)
+library(ggthemes)
+library(kableExtra)
 
 
 # read in data 
@@ -37,15 +41,19 @@ test  <- read.csv("playground-series-s6e3/test.csv")
 
 Customer churn refers to when a customer stops doing business with a company. High churn rates reduce revenue, increase acquisition costs, and negatively impact long term growth. The goal of this project is to predict the probability that a customer will churn based on customer data. By identifying high risk customers early, businesses can implement targeted retention strategies. This can reduce revenue loss and support data-driven decision-making. This can be especially helpful for new businesses where keeping customers is crucial in the early stages of a business.
 
-In this project, we analyze 
-
+In this project, we analyze a company's customer base and the data from each customer to predict whether or not that customer will churn. We also calculate the probability that a customer will churn given certain variables. 
 
 ## 1.1 Research Question
 
+Using the data provided from the "Predict Customer Churn" Playground [1], we answer the following research question:
+
 **What is the probability that a customer will churn given the customer's data?**
 
-## 1.2 Variables
+## 1.2 Data and Variables
 
+As stated above, the data we are using is from the "Predict Customer Churn Playground from Kaggle [1]. In the downloaded package, we obtain a training dataset and a testing dataset with the variables in @tbl-variables and @tbl-variables2.
+
+@tbl-variables and @tbl-variables2 show the variables used in this project and in our analysis:
 
 <!--
 table below will include the variable names, type, and a short description of that variable
@@ -55,9 +63,85 @@ table below will include the variable names, type, and a short description of th
 #| label: tbl-variables
 #| echo: false
 #| tbl-cap: "Summary of Variables Used in Analysis"
-variable.desc <- data.frame(Name = c())
-variable.desc$Type <- c()
-variable.desc$Notes <- c()
+variable.desc <- data.frame(Name = c("ID",
+                                     "Gender",
+                                     "SeniorCitizen",
+                                     "Partner",
+                                     "Dependents",
+                                     "Tenure",
+                                     "PhoneService",
+                                     "MultipleLines",
+                                     "InternetService",
+                                     "OnlineSecurity",
+                                     "OnlineBackup",
+                                     "DeviceProtection",
+                                     "TechSupport",
+                                     "StreamingTV",
+                                     "StreamingMovies"))
+variable.desc$Type <- c("Numerical",
+                        "Binary",
+                        "Binary",
+                        "Binary",
+                        "Binary",
+                        "Numerical",
+                        "Binary",
+                        "Categorical",
+                        "Categorical",
+                        "Categorical",
+                        "Categorical",
+                        "Categorical",
+                        "Categorical",
+                        "Categorical",
+                        "Categorical")
+variable.desc$Notes <- c("A unique identifier assigned to each individual customer in the dataset.",
+                         "Indicates whether the customer is female (0) or male (1).",
+                         "A binary flag indicating if the customer is younger than 65 (0) or at least 65 (1).",
+                         "Indicates whether the customer is married or has a domestic partner (1) or not (0).",
+                         "Specifies if the customer lives with children, parents, or other family members who rely on them financially (1) or not (0)",
+                         "The total number of months the customer has been with the company",
+                         "Indicates whether the customer has a home phone service subscription (1) or not (0).",
+                         "Specifies if the customer has multiple phone lines, a single line, or no phone service",
+                         "The type of internet connection the customer uses (DSL, Fiber Optic, or none).",
+                         "Indicates if the customer has an active subscription for online security software.",
+                         "Specifies if the customer uses the company's online data backup service.",
+                         "Indicates if the customer has insurance or a protection plan for their hardware.",
+                         "Specifies if the customer has access to premium technical support services.",
+                         "Indicates whether the customer uses their internet service to stream television programs (if they have internet service).",
+                         "Indicates whether the customer uses their internet service to stream movies (if they have internet service)."
+                         )
+knitr::kable(variable.desc, format = "latex", booktabs = TRUE,
+             col.names = c("Name", "Type", "Notes"),
+             longtable = FALSE) %>%
+  kable_styling( full_width = FALSE) %>%
+  column_spec(3, width = "8cm") %>% 
+  add_header_above(c(" " = 3))
+```
+
+\newpage
+
+```{r}
+#| label: tbl-variables2
+#| echo: false
+#| tbl-cap: "Summary of Variables Used in Analysis (cont.)"
+variable.desc <- data.frame(Name = c("Contract",
+                                     "PaperlessBilling",
+                                     "PaymentMethod",
+                                     "MonthlyCharges",
+                                     "TotalCharges",
+                                     "Churn"))
+variable.desc$Type <- c("Categorical",
+                        "Binary",
+                        "Categorical",
+                        "Numerical",
+                        "Numerical",
+                        "Binary (Target)")
+variable.desc$Notes <- c("The length of the customer's current service agreement (Month-to-month, one year, or two year).",
+                         "Indicates if the customer has opted to receive their bills electronically (1) rather than by mail (0).",
+                         "The primary method the customer uses to pay their monthly bill (Mailed check, credit card (automatic), electronic check, bank transfer (automatic)).",
+                         "The specific amount billed to the customer on a monthly basis.",
+                         "The cumulative amount the customer has been charged over the entire duration of their tenure.",
+                         "The target variable indicating whether the customer stopped using the company's services (only in the 'training' dataset)."
+                         )
 knitr::kable(variable.desc, format = "latex", booktabs = TRUE,
              col.names = c("Name", "Type", "Notes"),
              longtable = FALSE) %>%
@@ -84,17 +168,21 @@ our model, reasoning for picking our model, and the model output/summary
 where we answer the research question formally. need to provide a probability
 -->
 
-# 5. References
+
+# 5. Additional Considerations
+
+<!--
+ethical considerations, biases, etc.
+-->
+
+
+# 6. References
 
 <!--
 reference list
 -->
 
-# 6. Additional Considerations
-
-<!--
-ethical considerations, biases, etc.
--->
+[1]“Predict Customer Churn,” @kaggle, 2026. https://www.kaggle.com/competitions/playground-series-s6e3 (accessed Apr. 28, 2026)‌ 
 
 # Technical Appendix 
 
@@ -110,7 +198,7 @@ code important to our analysis, but that we shouldn't include in the main body o
 this is where all of our code will be outputted, because we don't want code chunks in the main body of our report.
 -->
 
-```{r ref.label=c('front-matter')}
+```{r ref.label=c('front-matter', 'tbl-variables', 'tbl-variables2')}
 #| echo: true
 #| eval: false
 
