@@ -152,9 +152,20 @@ knitr::kable(variable.desc, format = "latex", booktabs = TRUE,
 
 # 2. Exploratory Data Analysis (EDA)
 
+## 2.1 Feature Scaling
+
+<!--
+ talk about why we scaled the data here
+ 
+-->
+
+## 2.2 EDA
+
 <!--
 idk how, but we need to try and look at some eda, even though our XGBoost model includes every variable. this can be where we mention how we scaled the variables and why, and our correlation plot.
 --> 
+
+
 
 # 3. Statistical Analysis 
 
