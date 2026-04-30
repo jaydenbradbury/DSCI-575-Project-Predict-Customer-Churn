@@ -173,6 +173,11 @@ idk how, but we need to try and look at some eda, even though our XGBoost model 
 our model, reasoning for picking our model, and the model output/summary
 -->
 
+## 3.1 Modeling
+
+## 3.2 Analysis
+
+
 # 4. Conclusion & Results
 
 <!--
