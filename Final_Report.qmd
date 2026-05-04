@@ -3,7 +3,12 @@ title: "Predicting Customer Churn"
 subtitle: "DSCI 575"
 author: "Jayden Bradbury, Jonah Fallon"
 date: "`r Sys.Date()`"
-format: pdf
+format: 
+  pdf:
+    fig-width: 5
+    fig-height: 3
+    fig-align: "center"
+    fig-pos: "H"
 ---
 
 ```{r}
@@ -27,6 +32,7 @@ library(xtable)
 library(knitr)
 library(ggthemes)
 library(kableExtra)
+library(scales)
 
 
 # read in data 
@@ -159,31 +165,182 @@ knitr::kable(variable.desc, format = "latex", booktabs = TRUE,
  
 -->
 
+Before training the models, several preprocessing steps were applied to ensure all features were in the correct format for the algorithms used and scaled to ensure unbiased training.
+
+**Binary encoding**
+
+Features with two-level categorical responses were converted to binary numeric indicators. Gender was encoded as 1 for Male and 0 for Female, while Partner, Dependents, PhoneService, and PaperlessBilling were each encoded as 1 for "Yes" and 0 for "No". The target variable Churn was encoded as 1 (churned) and 0 (retained). This applied to both the training and test sets.
+
+**One-hot encoding**
+
+The remaining categorical features (MultipleLines, InternetService, OnlineSecurity, OnlineBackup, DeviceProtection, TechSupport, StreamingTV, StreamingMovies, Contract, and PaymentMethod) each contained three or more levels and could not be reduced to a single binary column without creating unitentional mathematical relationships like $1<2<3$. These were first cast to factors, then expanded into dummy variables so there are now indicator variables.
+
+**Feature scaling**
+
+The three continuous numeric features — tenure, MonthlyCharges, and TotalCharges — were standardized using z-score normalization (mean = 0, standard deviation = 1) with the preProcess() function from the caret package. Standardization is important for models sensitive to feature magnitude such as logistic regression, ensuring no variable dominates due to its scale rather than its actual predictive power.
+
 ## 2.2 EDA
 
 <!--
 idk how, but we need to try and look at some eda, even though our XGBoost model includes every variable. this can be where we mention how we scaled the variables and why, and our correlation plot.
 --> 
 
+```{r}
+theme_set(
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title    = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(color = "grey40", size = 11),
+    axis.title    = element_text(size = 11),
+    legend.position = "bottom"
+  )
+)
 
+CHURN_COLOR    <- "#E24B4A"
+RETAIN_COLOR   <- "#3266AD"
+NEUTRAL_COLOR  <- "#888780"
+```
+
+```{r churn-dist}
+#| label: fig-churn-dist
+#| fig-cap: "Distribution of the target variable Churn."
+churn_counts <- train |>
+  count(Churn) |>
+  mutate(pct = n / sum(n),
+         label = paste0(Churn, "\n", percent(pct, accuracy = 1), " (n=", comma(n), ")"))
+
+ggplot(churn_counts, aes(x = Churn, y = n, fill = Churn)) +
+  geom_col(width = 0.55, show.legend = FALSE) +
+  geom_text(aes(label = paste0(percent(pct, accuracy = 0.1), "\n(n=", comma(n), ")")),
+            vjust = -0.4, size = 4, fontface = "bold") +
+  scale_fill_manual(values = c("No" = RETAIN_COLOR, "Yes" = CHURN_COLOR)) +
+  scale_y_continuous(labels = comma, expand = expansion(mult = c(0, 0.15))) +
+  labs(title = "Target distribution: Churn",
+       x = NULL, y = "Count")
+```
+
+The class data is very imbalanced. It may be necessary to re-balance the classes using resampling to create a more even distribution. Other options include using stratified CV while training to ensure fairness between the classes, or applying a class weight function. 
+
+```{r correlation}
+#| label: fig-correlation
+#| fig-cap: "Pearson correlation matrix for all numeric features."
+# Encode categoricals for correlation
+train_num <- train |>
+  mutate(
+    Churn_bin        = ifelse(Churn == "Yes", 1, 0),
+    gender           = ifelse(gender == "Male", 1, 0),
+    Partner          = ifelse(Partner == "Yes", 1, 0),
+    Dependents       = ifelse(Dependents == "Yes", 1, 0),
+    PhoneService     = ifelse(PhoneService == "Yes", 1, 0),
+    PaperlessBilling = ifelse(PaperlessBilling == "Yes", 1, 0)
+  ) |>
+  select(where(is.numeric), -id)
+
+cor_matrix <- cor(train_num, use = "complete.obs")
+
+corrplot(cor_matrix,
+         method     = "color",
+         type       = "upper",
+         order      = "hclust",
+         tl.col     = "black",
+         tl.srt     = 45,
+         tl.cex     = 0.85,
+         addCoef.col = "black",
+         number.cex  = 0.65,
+         col         = colorRampPalette(c(CHURN_COLOR, "white", RETAIN_COLOR))(200),
+         title       = "Correlation matrix — numeric features",
+         mar         = c(0, 0, 2, 0))
+```
+
+Correlations of numerical columns in our dataset. Darker blues indicate positively correlated variables and reds indicate negatively correlated variables. Some variables like $tenure$ ~ $total charges$ are highly correlated. Reducing the number of dimensions using PCA or removing columns may improve model performance.
+
+```{r churn-correlations}
+#| label: fig-churn-correlations
+#| fig-cap: "Pearson correlations between each numeric predictor and the  Churn target."
+cor_with_churn <- cor_matrix["Churn_bin", ] |>
+  as.data.frame() |>
+  rownames_to_column("Feature") |>
+  rename(Correlation = 2) |>
+  filter(Feature != "Churn_bin") |>
+  arrange(desc(abs(Correlation)))
+
+ggplot(cor_with_churn, aes(x = reorder(Feature, Correlation), y = Correlation,
+                            fill = Correlation > 0)) +
+  geom_col(width = 0.6, show.legend = FALSE) +
+  geom_text(aes(label = round(Correlation, 2),
+                hjust = ifelse(Correlation >= 0, -0.2, 1.2)),
+            size = 3.5, fontface = "bold") +
+  scale_fill_manual(values = c("TRUE" = CHURN_COLOR, "FALSE" = RETAIN_COLOR)) +
+  scale_y_continuous(expand = expansion(mult = 0.25)) +
+  coord_flip() +
+  labs(title = "Feature correlations with Churn",
+       x = NULL, y = "Correlation")
+```
+
+The graph above shows the correlation between the predictors and the target, Churn. Tenure is strongly negatively correlated. This indicates that the long a customer is with a company, the less likely they are to churn. Predictors that indicate a higher churn likelihood include PaperlessBilling, Monthly Charges (dollars), and SeniorCitizen. Higher monthly charges lead to higher churn rates along with customers who use paperless billing or are senior citizens.
+
+```{r tenure-dist}
+#| label: fig-tenure-dist
+#| fig-cap: "Histogram of customer tenure in months, separated by churn status."
+ggplot(train, aes(x = tenure, fill = Churn)) +
+  geom_histogram(binwidth = 3, alpha = 0.75, position = "identity", color = "white") +
+  scale_fill_manual(values = c("No" = RETAIN_COLOR, "Yes" = CHURN_COLOR),
+                    labels = c("Retained", "Churned")) +
+  scale_x_continuous(breaks = seq(0, 72, 12)) +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Tenure distribution by churn status",
+       x = "Tenure (months)", y = "Count", fill = NULL)
+```
+
+As seen before, tenure is very helpful in predicting whether a customer will churn. Customers are much more likely to churn in the first 12 months of their tenure. The graph above also indicates an imbalance in the tenure class. Tenure is most likely capped at 72 months which leads to many customers with this value. It could be helpful to balance this for training.
+
+```{r monthly-charges-dist}
+#| label: fig-monthly-charges
+#| fig-cap: "Density plot of monthly charges by churn status."
+ggplot(train, aes(x = MonthlyCharges, fill = Churn)) +
+  geom_density(alpha = 0.55) +
+  scale_fill_manual(values = c("No" = RETAIN_COLOR, "Yes" = CHURN_COLOR),
+                    labels = c("Retained", "Churned")) +
+  labs(title = "Monthly charges — density by churn status",
+       subtitle = "Churners skew toward higher monthly charges",
+       x = "Monthly charges ($)", y = "Density", fill = NULL)
+```
+
+Churn is much more likely for users with higher monthly payments. There is a spike in the density graph from around 70 to 110 dollars, where customers are much more likely to churn.
 
 # 3. Statistical Analysis 
 
-<!--
-our model, reasoning for picking our model, and the model output/summary
--->
+## 3.1 Model Selection
 
-## 3.1 Modeling
+Three classification models were trained and evaluated to predict customer churn probability: logistic regression, random forest, and XGBoost. All models were trained on the preprocessed and scaled feature matrix described in Section 2.1.
 
-## 3.2 Analysis
+**Logistic Regression** was used as a baseline model. It was fit using `glm()` with `family = "binomial"`, producing predicted churn probabilities. This model is interpretable and provides a useful benchmark, but is likely to underperform on complex nonlinear relationships between predictors. This was the worst performing model
 
+**Random Forest** was trained using the `randomForest` package with 100 trees (`ntree = 100`) and `mtry` set to the square root of the number of features, which is the standard default for classification tasks. Random forests capture nonlinear interactions and feature dependencies better than Logistic Regression would without much risk for overfitting.
+
+**XGBoost** was the primary model we looked at. It was trained using the `xgboost` package with `objective = "binary:logistic"` and evaluated using log-loss (`eval_metric = "logloss"`). Key hyperparameters that were effective included a maximum tree depth of 6 and a learning rate (`eta`) of 0.1 over 100 boosting rounds. XGBoost is works well with structured tabular data like in this project. It also handles class imbalance better than simpler methods.
+
+## 3.2 Feature Importance
+
+![Feature Importance](featureimportance.jpeg)
+
+Figure 6 shows the top 15 predictors ranked. PaymentMethod:ElectonicCheck is revealed as the most important to the XGBoost model, followed by tenure and Contract:Two Year.
 
 # 4. Conclusion & Results
 
-<!--
-where we answer the research question formally. need to provide a probability
--->
+## 4.1 Summary of Findings
 
+This project set out to answer the question: **What is the probability that a customer will churn given the customer's data?** Using the Kaggle Playground Series S6E3 dataset, we trained three classification models — logistic regression, random forest, and XGBoost — to estimate individual churn probabilities for each customer in the test set.
+
+Through EDA, tenure was the strongest protective factor. The longer a customer remains with the company, the less likely they were to churn. Customers who subscribed to protective add-on services such as online security and tech support also churned at lower rates than those who did not.
+
+## 4.2 Model Performance
+
+XGBoost was selected as our primary model due to its strong performance on structured tabular data and its ability to handle the class imbalance present in this dataset (~26% churn rate). Predicted churn probabilities were generated for all customers in the test set and submitted to the Kaggle competition. Logistic regression served as an interpretable baseline, and random forest provided an additional comparison point.
+
+## 4.3 Answering the Research Question
+
+The XGBoost model produces a churn probability between 0 and 1 for each customer. A higher predicted probability indicates a customer at greater risk of churning. In practice, a business could keep track of customers with a high to prioritize outreach and retention efforts. Another application could be to focus on improving aspects of the company where churning is more likely, or removing the option all together. The feature importance analysis confirms that tenure, contract type, and payment type are strong indicators of churn.
 
 # 5. Additional Considerations
 
