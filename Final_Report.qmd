@@ -5,7 +5,7 @@ author: "Jayden Bradbury, Jonah Fallon"
 date: "`r Sys.Date()`"
 format: 
   pdf:
-    fig-width: 5
+    fig-width: 6
     fig-height: 3
     fig-align: "center"
     fig-pos: "H"
@@ -33,6 +33,7 @@ library(knitr)
 library(ggthemes)
 library(kableExtra)
 library(scales)
+library(xgboost)
 
 
 # read in data 
@@ -57,7 +58,7 @@ Using the data provided from the "Predict Customer Churn" Playground [1], we ans
 
 ## 1.2 Data and Variables
 
-As stated above, the data we are using is from the "Predict Customer Churn Playground from Kaggle [1]. In the downloaded package, we obtain a training dataset and a testing dataset with the variables in @tbl-variables and @tbl-variables2.
+As stated above, the data we are using is from the "Predict Customer Churn" Playground from Kaggle [1]. In the downloaded package, we obtain a training dataset and a testing dataset with the variables in @tbl-variables and @tbl-variables2.
 
 @tbl-variables and @tbl-variables2 show the variables used in this project and in our analysis:
 
@@ -186,6 +187,8 @@ idk how, but we need to try and look at some eda, even though our XGBoost model 
 --> 
 
 ```{r}
+#| echo: false
+#| label: color-settings
 theme_set(
   theme_minimal(base_size = 13) +
   theme(
@@ -201,7 +204,7 @@ RETAIN_COLOR   <- "#3266AD"
 NEUTRAL_COLOR  <- "#888780"
 ```
 
-```{r churn-dist}
+```{r}
 #| label: fig-churn-dist
 #| fig-cap: "Distribution of the target variable Churn."
 churn_counts <- train |>
@@ -221,7 +224,7 @@ ggplot(churn_counts, aes(x = Churn, y = n, fill = Churn)) +
 
 The class data is very imbalanced. It may be necessary to re-balance the classes using resampling to create a more even distribution. Other options include using stratified CV while training to ensure fairness between the classes, or applying a class weight function. 
 
-```{r correlation}
+```{r}
 #| label: fig-correlation
 #| fig-cap: "Pearson correlation matrix for all numeric features."
 # Encode categoricals for correlation
@@ -254,7 +257,7 @@ corrplot(cor_matrix,
 
 Correlations of numerical columns in our dataset. Darker blues indicate positively correlated variables and reds indicate negatively correlated variables. Some variables like $tenure$ ~ $total charges$ are highly correlated. Reducing the number of dimensions using PCA or removing columns may improve model performance.
 
-```{r churn-correlations}
+```{r}
 #| label: fig-churn-correlations
 #| fig-cap: "Pearson correlations between each numeric predictor and the  Churn target."
 cor_with_churn <- cor_matrix["Churn_bin", ] |>
@@ -279,7 +282,7 @@ ggplot(cor_with_churn, aes(x = reorder(Feature, Correlation), y = Correlation,
 
 The graph above shows the correlation between the predictors and the target, Churn. Tenure is strongly negatively correlated. This indicates that the long a customer is with a company, the less likely they are to churn. Predictors that indicate a higher churn likelihood include PaperlessBilling, Monthly Charges (dollars), and SeniorCitizen. Higher monthly charges lead to higher churn rates along with customers who use paperless billing or are senior citizens.
 
-```{r tenure-dist}
+```{r}
 #| label: fig-tenure-dist
 #| fig-cap: "Histogram of customer tenure in months, separated by churn status."
 ggplot(train, aes(x = tenure, fill = Churn)) +
@@ -294,7 +297,7 @@ ggplot(train, aes(x = tenure, fill = Churn)) +
 
 As seen before, tenure is very helpful in predicting whether a customer will churn. Customers are much more likely to churn in the first 12 months of their tenure. The graph above also indicates an imbalance in the tenure class. Tenure is most likely capped at 72 months which leads to many customers with this value. It could be helpful to balance this for training.
 
-```{r monthly-charges-dist}
+```{r}
 #| label: fig-monthly-charges
 #| fig-cap: "Density plot of monthly charges by churn status."
 ggplot(train, aes(x = MonthlyCharges, fill = Churn)) +
@@ -310,21 +313,148 @@ Churn is much more likely for users with higher monthly payments. There is a spi
 
 # 3. Statistical Analysis 
 
+```{r}
+#| echo: false
+#| label: code-features
+
+# make yes/no cols into binary cols
+
+train <- train |>
+  mutate(
+    gender = ifelse(gender == "Male", 1, 0),
+    Partner = ifelse(Partner == "Yes", 1, 0),
+    Dependents = ifelse(Dependents == "Yes", 1, 0),
+    PhoneService = ifelse(PhoneService == "Yes", 1, 0),
+    PaperlessBilling = ifelse(PaperlessBilling == "Yes", 1, 0),
+    Churn = ifelse(Churn == "Yes", 1, 0)
+  )
+
+test <- test |>
+  mutate(
+    gender = ifelse(gender == "Male", 1, 0), 
+    Partner = ifelse(Partner == "Yes", 1, 0),
+    Dependents = ifelse(Dependents == "Yes", 1, 0),
+    PhoneService = ifelse(PhoneService == "Yes", 1, 0),
+    PaperlessBilling = ifelse(PaperlessBilling == "Yes", 1, 0)
+  )
+
+# one hot encode the rest of the variables
+
+train <- train |>
+  mutate(
+    MultipleLines = as.factor(MultipleLines),
+    InternetService = as.factor(InternetService),
+    OnlineSecurity = as.factor(OnlineSecurity),
+    OnlineBackup = as.factor(OnlineBackup),
+    DeviceProtection = as.factor(DeviceProtection),
+    TechSupport = as.factor(TechSupport),
+    StreamingTV = as.factor(StreamingTV),
+    StreamingMovies = as.factor(StreamingMovies),
+    Contract = as.factor(Contract),
+    PaymentMethod = as.factor(PaymentMethod)
+  )
+
+test <- test |>
+  mutate(
+    MultipleLines = as.factor(MultipleLines),
+    InternetService = as.factor(InternetService),
+    OnlineSecurity = as.factor(OnlineSecurity),
+    OnlineBackup = as.factor(OnlineBackup),
+    DeviceProtection = as.factor(DeviceProtection),
+    TechSupport = as.factor(TechSupport),
+    StreamingTV = as.factor(StreamingTV),
+    StreamingMovies = as.factor(StreamingMovies),
+    Contract = as.factor(Contract),
+    PaymentMethod = as.factor(PaymentMethod)
+  )
+
+
+numeric_cols <- names(train)[sapply(train, is.numeric)] # numerical cols
+numeric_cols <- setdiff(numeric_cols, c("id", "Churn"))
+
+preproc <- preProcess(train[, numeric_cols], method = c("center", "scale")) # scalar
+
+train_scaled <- train # scale train
+train_scaled[, numeric_cols] <- predict(preproc, train[, numeric_cols])
+test_scaled <- test # scale test
+test_scaled[, numeric_cols] <- predict(preproc, test[, numeric_cols])
+
+# dont need id and get rid of churn for training
+x_train <- train_scaled %>% select(-id, -Churn)
+y_train <- train_scaled$Churn
+x_test <- test_scaled %>% select(-id)
+
+# one-hot encode to numerical values valid for model
+x_train <- model.matrix(~ . -1, data = x_train)
+x_test  <- model.matrix(~ . -1, data = x_test)
+```
+
+
 ## 3.1 Model Selection
 
 Three classification models were trained and evaluated to predict customer churn probability: logistic regression, random forest, and XGBoost. All models were trained on the preprocessed and scaled feature matrix described in Section 2.1.
 
-**Logistic Regression** was used as a baseline model. It was fit using `glm()` with `family = "binomial"`, producing predicted churn probabilities. This model is interpretable and provides a useful benchmark, but is likely to underperform on complex nonlinear relationships between predictors. This was the worst performing model
+The model we chose to use was XGBoost. It was trained using the `xgboost` package with `objective = "binary:logistic"` and evaluated using log-loss (`eval_metric = "logloss"`). Key hyperparameters that were effective included a maximum tree depth of 6 and a learning rate (`eta`) of 0.1 over 100 boosting rounds. XGBoost is works well with structured tabular data like in this project. It also handles class imbalance better than simpler methods. 
 
-**Random Forest** was trained using the `randomForest` package with 100 trees (`ntree = 100`) and `mtry` set to the square root of the number of features, which is the standard default for classification tasks. Random forests capture nonlinear interactions and feature dependencies better than Logistic Regression would without much risk for overfitting.
 
-**XGBoost** was the primary model we looked at. It was trained using the `xgboost` package with `objective = "binary:logistic"` and evaluated using log-loss (`eval_metric = "logloss"`). Key hyperparameters that were effective included a maximum tree depth of 6 and a learning rate (`eta`) of 0.1 over 100 boosting rounds. XGBoost is works well with structured tabular data like in this project. It also handles class imbalance better than simpler methods.
+```{r}
+#| echo: false
+#| label: code-xgboost
+
+
+# Ensure inputs are numeric matrices
+x_train <- as.matrix(x_train)
+x_test  <- as.matrix(x_test)
+
+# If y_train is a factor, convert to 0/1
+if (is.factor(y_train)) {
+  y_train <- as.numeric(y_train) - 1
+}
+
+# Create DMatrix
+dtrain <- xgb.DMatrix(data = x_train, label = y_train)
+dtest  <- xgb.DMatrix(data = x_test)
+
+# Set parameters
+params <- list(
+  objective = "binary:logistic",
+  eval_metric = "logloss",
+  max_depth = 6,
+  eta = 0.1
+)
+
+# Train model
+xgb_model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 100,
+  verbose = 1
+)
+
+# Predict probabilities
+xgb_preds <- predict(xgb_model, dtest)
+
+# Save results
+xgb_results <- data.frame(
+  id = test$id,
+  Churn = xgb_preds
+)
+```
+
 
 ## 3.2 Feature Importance
 
-![Feature Importance](featureimportance.jpeg)
+```{r}
+#| echo: false
+#| label: fig-featureImportance
+#| warning: false 
+#| fig-cap: "Pre and Post Test Scores for Forms, Letters, and Numbers"
+# feature importance
+importance_matrix <- xgb.importance(model = xgb_model)
+xgb.plot.importance(importance_matrix)
+```
 
-Figure 6 shows the top 15 predictors ranked. PaymentMethod:ElectonicCheck is revealed as the most important to the XGBoost model, followed by tenure and Contract:Two Year.
+@fig-featureImportance shows the top 15 predictors ranked. PaymentMethod:ElectonicCheck is revealed as the most important to the XGBoost model, followed by tenure and Contract:Two Year.
 
 # 4. Conclusion & Results
 
@@ -363,6 +493,63 @@ reference list
 code important to our analysis, but that we shouldn't include in the main body of the report. This will be like validation and other models we tried.
 -->
 
+**Logistic Regression** was used as a baseline model. It was fit using `glm()` with `family = "binomial"`, producing predicted churn probabilities. This model is interpretable and provides a useful benchmark, but is likely to underperform on complex nonlinear relationships between predictors. This was the worst performing model
+
+```{r}
+#| echo: false
+#| label: code-logisticreg
+# logistic regression
+log_model <- glm(
+  y_train ~ .,
+  data = as.data.frame(x_train),
+  family = "binomial"
+)
+
+# Predict probabilities
+log_preds <- predict(
+  log_model,
+  newdata = as.data.frame(x_test),
+  type = "response"
+)
+
+# Save results
+log_results <- data.frame(
+  id = test$id,
+  Churn = log_preds
+)
+
+write.csv(log_results, "results_logistic.csv", row.names = FALSE)
+```
+
+**Random Forest** was trained using the `randomForest` package with 100 trees (`ntree = 100`) and `mtry` set to the square root of the number of features, which is the standard default for classification tasks. Random forests capture nonlinear interactions and feature dependencies better than Logistic Regression would without much risk for overfitting.
+
+```{r}
+#| echo: false
+#| label: code-randForest
+library(randomForest)
+y_train_yn <- factor(y_train, levels = c(0, 1), labels = c("No", "Yes"))
+# Train model
+rf_model <- randomForest(
+  x = x_train,
+  y = y_train_yn,
+  ntree = 100,
+  mtry = floor(sqrt(ncol(x_train))),
+  do.trace = 10
+)
+
+# Predict probabilities (class "Yes")
+rf_preds <- predict(rf_model, x_test, type = "prob")[, "Yes"]
+
+# Save results
+rf_results <- data.frame(
+  id = test$id,
+  Churn = rf_preds
+)
+
+write.csv(rf_results, "results_randomforest.csv", row.names = FALSE)
+```
+
+
 \newpage
 
 ### R Script
@@ -371,7 +558,7 @@ code important to our analysis, but that we shouldn't include in the main body o
 this is where all of our code will be outputted, because we don't want code chunks in the main body of our report.
 -->
 
-```{r ref.label=c('front-matter', 'tbl-variables', 'tbl-variables2')}
+```{r ref.label=c('front-matter', 'tbl-variables', 'tbl-variables2', 'color-settings', 'fig-churn-dist', 'fig-correlation', 'fig-churn-correlations', 'fig-tenure-dist', 'fig-monthly-charges', 'code-features', 'code-xgboost', 'fig-featureImportance', 'code-logisticreg', 'code-randForest')}
 #| echo: true
 #| eval: false
 
