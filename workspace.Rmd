@@ -145,17 +145,6 @@ test_scaled <- test # scale test
 test_scaled[, numeric_cols] <- predict(preproc, test[, numeric_cols])
 ```
 
-```{r}
-matrix <- cor(train_scaled[numeric_cols])
-corrplot(matrix, method = "color")
-```
-
-
-```{r}
-summary(train_scaled) # mean 0
-# data is imbalanced, mean of churn 0.22 so we may have to bootstrap or be careful with results
-```
-
 
 
 ```{r}
@@ -221,49 +210,6 @@ rf_results <- data.frame(
 )
 
 write.csv(rf_results, "results_randomforest.csv", row.names = FALSE)
-```
-
-```{r}
-
-```
-
-
-```{r}
-library(xgboost)
-
-# Create DMatrix
-dtrain <- xgb.DMatrix(data = x_train, label = y_train)
-dtest  <- xgb.DMatrix(data = x_test)
-
-# hyperparameters we can gridsearch/randomsearch
-# max_depth
-# learning_rate
-# objective
-# max_leaves
-# min_split
-# gamma
-
-# Train model
-xgb_model <- xgboost(
-  data = dtrain,
-  nrounds = 100,
-  objective = "binary:logistic",
-  eval_metric = "logloss",
-  max_depth = 6,
-  eta = 0.1,
-  verbose = 1
-)
-
-# Predict probabilities
-xgb_preds <- predict(xgb_model, dtest)
-
-# Save results
-xgb_results <- data.frame(
-  id = test$id,
-  Churn = xgb_preds
-)
-
-write.csv(xgb_results, "results_xgboost.csv", row.names = FALSE)
 ```
 
 
