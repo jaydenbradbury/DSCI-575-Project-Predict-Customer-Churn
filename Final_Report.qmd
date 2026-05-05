@@ -130,6 +130,8 @@ knitr::kable(variable.desc, format = "latex", booktabs = TRUE,
 #| label: tbl-variables2
 #| echo: false
 #| tbl-cap: "Summary of Variables Used in Analysis (cont.)"
+
+
 variable.desc <- data.frame(Name = c("Contract",
                                      "PaperlessBilling",
                                      "PaymentMethod",
@@ -394,7 +396,7 @@ x_test  <- model.matrix(~ . -1, data = x_test)
 
 Three classification models were trained and evaluated to predict customer churn probability: logistic regression, random forest, and XGBoost. All models were trained on the preprocessed and scaled feature matrix described in Section 2.1.
 
-The model we chose to use was XGBoost. It was trained using the `xgboost` package with `objective = "binary:logistic"` and evaluated using log-loss (`eval_metric = "logloss"`). Key hyperparameters that were effective included a maximum tree depth of 6 and a learning rate (`eta`) of 0.1 over 100 boosting rounds. XGBoost is works well with structured tabular data like in this project. It also handles class imbalance better than simpler methods. 
+The model we chose to use was XGBoost. It was trained using the `xgboost` package with `objective = "binary:logistic"` and evaluated using log-loss (`eval_metric = "logloss"`). Key hyperparameters that were effective included a maximum tree depth of 6 and a learning rate (`eta`) of 0.1 over 100 boosting rounds. XGBoost works well with structured tabular data like in this project. It also handles class imbalance better than simpler methods. 
 
 
 ```{r}
@@ -442,6 +444,27 @@ xgb_results <- data.frame(
 ```
 
 
+```{r}
+#| echo: false
+#| label: tbl-overallResults
+#| tbl-cap: "Table of the First 6 Rows of the Overall Results"
+
+knitr::kable(head(xgb_results), format = "latex", booktabs = TRUE,
+             col.names = c("Customer ID", "Probability of Churn"),
+             longtable = FALSE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"), full_width = FALSE) %>%
+  column_spec(2, width = "5cm") %>% 
+  add_header_above(c(" " = 2))
+```
+
+
+The first 6 rows of our results table are shown in @tbl-overallResults. The results of our XGBoost returned the testing customer ID and the probability that the given customer in the testing dataset churned. 
+
+After submitting our required .csv file to the Kaggle competition, we recieved an ROC-AUC of about 0.9138. This means that our model was extremely good at distinguishing between customers that churned and customers that did not.
+
+To give a full interpretation of our ROC-AUC, if you randomly pick one customer who churned and one who stayed, there is a 91.38% chance our XGBoost model will assign a higher probability of churn to the one who actually left.
+
+
 ## 3.2 Feature Importance
 
 ```{r}
@@ -454,7 +477,9 @@ importance_matrix <- xgb.importance(model = xgb_model)
 xgb.plot.importance(importance_matrix)
 ```
 
-@fig-featureImportance shows the top 15 predictors ranked. PaymentMethod:ElectonicCheck is revealed as the most important to the XGBoost model, followed by tenure and Contract:Two Year.
+@fig-featureImportance shows the top 15 predictors ranked. As shown, the top three variables that were most important in determining whether a customer churned were PaymentMethod, tenure, and Contract, all of which align with what we found in our EDA section.
+
+
 
 # 4. Conclusion & Results
 
@@ -462,7 +487,7 @@ xgb.plot.importance(importance_matrix)
 
 This project set out to answer the question: **What is the probability that a customer will churn given the customer's data?** Using the Kaggle Playground Series S6E3 dataset, we trained three classification models — logistic regression, random forest, and XGBoost — to estimate individual churn probabilities for each customer in the test set.
 
-Through EDA, tenure was the strongest protective factor. The longer a customer remains with the company, the less likely they were to churn. Customers who subscribed to protective add-on services such as online security and tech support also churned at lower rates than those who did not.
+Through EDA, tenure was the strongest protective factor. The longer a customer remains with the company, the less likely they are to churn. Customers who subscribed to protective add-on services such as online security and tech support also churned at lower rates than those who did not.
 
 ## 4.2 Model Performance
 
@@ -558,7 +583,7 @@ write.csv(rf_results, "results_randomforest.csv", row.names = FALSE)
 this is where all of our code will be outputted, because we don't want code chunks in the main body of our report.
 -->
 
-```{r ref.label=c('front-matter', 'tbl-variables', 'tbl-variables2', 'color-settings', 'fig-churn-dist', 'fig-correlation', 'fig-churn-correlations', 'fig-tenure-dist', 'fig-monthly-charges', 'code-features', 'code-xgboost', 'fig-featureImportance', 'code-logisticreg', 'code-randForest')}
+```{r ref.label=c('front-matter', 'tbl-variables', 'tbl-variables2', 'color-settings', 'fig-churn-dist', 'fig-correlation', 'fig-churn-correlations', 'fig-tenure-dist', 'fig-monthly-charges', 'code-features', 'code-xgboost', 'tbl-overallResults', 'fig-featureImportance', 'code-logisticreg', 'code-randForest')}
 #| echo: true
 #| eval: false
 
