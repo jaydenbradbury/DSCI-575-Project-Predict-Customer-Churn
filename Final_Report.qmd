@@ -6,7 +6,7 @@ date: "`r Sys.Date()`"
 format: 
   pdf:
     fig-width: 6
-    fig-height: 3
+    fig-height: 5
     fig-align: "center"
     fig-pos: "H"
 ---
@@ -48,23 +48,25 @@ test  <- read.csv("playground-series-s6e3/test.csv")
 
 Customer churn refers to when a customer stops doing business with a company. High churn rates reduce revenue, increase acquisition costs, and negatively impact long term growth. The goal of this project is to predict the probability that a customer will churn based on customer data. By identifying high risk customers early, businesses can implement targeted retention strategies. This can reduce revenue loss and support data-driven decision-making. This can be especially helpful for new businesses where keeping customers is crucial in the early stages of a business.
 
-In this project, we analyze a company's customer base and the data from each customer to predict whether or not that customer will churn. We also calculate the probability that a customer will churn given certain variables. 
+In this project, we analyze a company's customer base and the data from each customer to predict whether or not that customer will churn. We also calculate the probability that a customer will churn given certain variables.
 
 ## 1.1 Research Question
 
-Using the data provided from the "Predict Customer Churn" Playground [1], we answer the following research question:
+Using the data provided from the "Predict Customer Churn" Playground \[1\], we answer the following research question:
 
 **What is the probability that a customer will churn given the customer's data?**
 
 ## 1.2 Data and Variables
 
-As stated above, the data we are using is from the "Predict Customer Churn" Playground from Kaggle [1]. In the downloaded package, we obtain a training dataset and a testing dataset with the variables in @tbl-variables and @tbl-variables2.
+As stated above, the data we are using is from the "Predict Customer Churn" Playground from Kaggle \[1\]. In the downloaded package, we obtain a training dataset and a testing dataset with the variables in @tbl-variables and @tbl-variables2.
 
 @tbl-variables and @tbl-variables2 show the variables used in this project and in our analysis:
 
+```{=html}
 <!--
 table below will include the variable names, type, and a short description of that variable
 -->
+```
 
 ```{r}
 #| label: tbl-variables
@@ -100,21 +102,39 @@ variable.desc$Type <- c("Numerical",
                         "Categorical",
                         "Categorical",
                         "Categorical")
-variable.desc$Notes <- c("A unique identifier assigned to each individual customer in the dataset.",
-                         "Indicates whether the customer is female (0) or male (1).",
-                         "A binary flag indicating if the customer is younger than 65 (0) or at least 65 (1).",
-                         "Indicates whether the customer is married or has a domestic partner (1) or not (0).",
-                         "Specifies if the customer lives with children, parents, or other family members who rely on them financially (1) or not (0)",
-                         "The total number of months the customer has been with the company",
-                         "Indicates whether the customer has a home phone service subscription (1) or not (0).",
-                         "Specifies if the customer has multiple phone lines, a single line, or no phone service",
-                         "The type of internet connection the customer uses (DSL, Fiber Optic, or none).",
-                         "Indicates if the customer has an active subscription for online security software.",
-                         "Specifies if the customer uses the company's online data backup service.",
-                         "Indicates if the customer has insurance or a protection plan for their hardware.",
-                         "Specifies if the customer has access to premium technical support services.",
-                         "Indicates whether the customer uses their internet service to stream television programs (if they have internet service).",
-                         "Indicates whether the customer uses their internet service to stream movies (if they have internet service)."
+variable.desc$Notes <- c("A unique identifier assigned to each individual
+                         customer in the dataset.",
+                         "Indicates whether the customer is female (0) or
+                         male (1).",
+                         "A binary flag indicating if the customer is younger
+                         than 65 (0) or at least 65 (1).",
+                         "Indicates whether the customer is married or has a
+                         domestic partner (1) or not (0).",
+                         "Specifies if the customer lives with children,
+                         parents, or other family members who rely on them 
+                         financially (1) or not (0)",
+                         "The total number of months the customer has been with
+                         the company",
+                         "Indicates whether the customer has a home phone 
+                         service subscription (1) or not (0).",
+                         "Specifies if the customer has multiple phone lines, 
+                         a single line, or no phone service",
+                         "The type of internet connection the customer uses 
+                         (DSL, Fiber Optic, or none).",
+                         "Indicates if the customer has an active subscription 
+                         for online security software.",
+                         "Specifies if the customer uses the company's online
+                         data backup service.",
+                         "Indicates if the customer has insurance or a
+                         protection plan for their hardware.",
+                         "Specifies if the customer has access to premium 
+                         technical support services.",
+                         "Indicates whether the customer uses their internet
+                         service to stream television programs 
+                         (if they have internet service).",
+                         "Indicates whether the customer uses their internet 
+                         service to stream movies (if they have internet 
+                         service)."
                          )
 knitr::kable(variable.desc, format = "latex", booktabs = TRUE,
              col.names = c("Name", "Type", "Notes"),
@@ -144,12 +164,18 @@ variable.desc$Type <- c("Categorical",
                         "Numerical",
                         "Numerical",
                         "Binary (Target)")
-variable.desc$Notes <- c("The length of the customer's current service agreement (Month-to-month, one year, or two year).",
-                         "Indicates if the customer has opted to receive their bills electronically (1) rather than by mail (0).",
-                         "The primary method the customer uses to pay their monthly bill (Mailed check, credit card (automatic), electronic check, bank transfer (automatic)).",
-                         "The specific amount billed to the customer on a monthly basis.",
-                         "The cumulative amount the customer has been charged over the entire duration of their tenure.",
-                         "The target variable indicating whether the customer stopped using the company's services (only in the 'training' dataset)."
+variable.desc$Notes <- c("The length of the customer's current service
+                         agreement (Month-to-month, one year, or two year).",
+                         "Indicates if the customer has opted to receive their
+                         bills electronically (1) rather than by mail (0).",
+                         "The primary method the customer uses to pay their
+                         monthly bill (Mailed check, credit card (automatic), electronic check, bank transfer (automatic)).",
+                         "The specific amount billed to the customer on a
+                         monthly basis.",
+                         "The cumulative amount the customer has been charged
+                         over the entire duration of their tenure.",
+                         "The target variable indicating whether the customer 
+                         stopped using the company's services (only in the 'training' dataset)."
                          )
 knitr::kable(variable.desc, format = "latex", booktabs = TRUE,
              col.names = c("Name", "Type", "Notes"),
@@ -163,30 +189,34 @@ knitr::kable(variable.desc, format = "latex", booktabs = TRUE,
 
 ## 2.1 Feature Scaling
 
+```{=html}
 <!--
  talk about why we scaled the data here
  
 -->
+```
 
 Before training the models, several preprocessing steps were applied to ensure all features were in the correct format for the algorithms used and scaled to ensure unbiased training.
 
 **Binary encoding**
 
-Features with two-level categorical responses were converted to binary numeric indicators. Gender was encoded as 1 for Male and 0 for Female, while Partner, Dependents, PhoneService, and PaperlessBilling were each encoded as 1 for "Yes" and 0 for "No". The target variable Churn was encoded as 1 (churned) and 0 (retained). This applied to both the training and test sets.
+Features with two-level categorical responses were converted to binary numeric indicators. $Gender$ was encoded as 1 for Male and 0 for Female, while $Partner$, $Dependents$, $PhoneService$, and $PaperlessBilling$ were each encoded as 1 for "Yes" and 0 for "No". The target variable $Churn$ was encoded as 1 (churned) and 0 (retained). This applied to both the training and test sets.
 
 **One-hot encoding**
 
-The remaining categorical features (MultipleLines, InternetService, OnlineSecurity, OnlineBackup, DeviceProtection, TechSupport, StreamingTV, StreamingMovies, Contract, and PaymentMethod) each contained three or more levels and could not be reduced to a single binary column without creating unitentional mathematical relationships like $1<2<3$. These were first cast to factors, then expanded into dummy variables so there are now indicator variables.
+The remaining categorical features ($MultipleLines$, $InternetService$, $OnlineSecurity$, $OnlineBackup$, $DeviceProtection$, $TechSupport$, $StreamingTV$, $StreamingMovies$, $Contract$, and $PaymentMethod$) each contained three or more levels and could not be reduced to a single binary column without creating unitentional mathematical relationships like $1<2<3$. These were first cast to factors, then expanded into dummy variables so there are now indicator variables.
 
 **Feature scaling**
 
-The three continuous numeric features — tenure, MonthlyCharges, and TotalCharges — were standardized using z-score normalization (mean = 0, standard deviation = 1) with the preProcess() function from the caret package. Standardization is important for models sensitive to feature magnitude such as logistic regression, ensuring no variable dominates due to its scale rather than its actual predictive power.
+The three continuous numeric features — $tenure$, $MonthlyCharges$, and $TotalCharges$ — were standardized using z-score normalization (mean = 0, standard deviation = 1) with the preProcess() function from the caret package. Standardization is important for models sensitive to feature magnitude such as logistic regression, ensuring no variable dominates due to its scale rather than its actual predictive power.
 
 ## 2.2 EDA
 
+```{=html}
 <!--
 idk how, but we need to try and look at some eda, even though our XGBoost model includes every variable. this can be where we mention how we scaled the variables and why, and our correlation plot.
---> 
+-->
+```
 
 ```{r}
 #| echo: false
@@ -224,7 +254,7 @@ ggplot(churn_counts, aes(x = Churn, y = n, fill = Churn)) +
        x = NULL, y = "Count")
 ```
 
-The class data is very imbalanced. It may be necessary to re-balance the classes using resampling to create a more even distribution. Other options include using stratified CV while training to ensure fairness between the classes, or applying a class weight function. 
+As seen in @fig-churn-dist. The class data is very imbalanced. It may be necessary to re-balance the classes using resampling to create a more even distribution. Other options include using stratified CV while training to ensure fairness between the classes, or applying a class weight function.
 
 ```{r}
 #| label: fig-correlation
@@ -257,7 +287,7 @@ corrplot(cor_matrix,
          mar         = c(0, 0, 2, 0))
 ```
 
-Correlations of numerical columns in our dataset. Darker blues indicate positively correlated variables and reds indicate negatively correlated variables. Some variables like $tenure$ ~ $total charges$ are highly correlated. Reducing the number of dimensions using PCA or removing columns may improve model performance.
+@fig-correlation shows the correlations of numerical columns in our dataset. Darker blues indicate positively correlated variables and reds indicate negatively correlated variables. Some variables like $tenure$ and $Total Charges$ are highly correlated. 
 
 ```{r}
 #| label: fig-churn-correlations
@@ -282,7 +312,7 @@ ggplot(cor_with_churn, aes(x = reorder(Feature, Correlation), y = Correlation,
        x = NULL, y = "Correlation")
 ```
 
-The graph above shows the correlation between the predictors and the target, Churn. Tenure is strongly negatively correlated. This indicates that the long a customer is with a company, the less likely they are to churn. Predictors that indicate a higher churn likelihood include PaperlessBilling, Monthly Charges (dollars), and SeniorCitizen. Higher monthly charges lead to higher churn rates along with customers who use paperless billing or are senior citizens.
+@fig-churn-correlations shows the correlation between the predictors and the target, $Churn$. $Tenure$ is strongly negatively correlated. This indicates that the longer a customer is with a company, the less likely they might be to churn. Predictors that indicate a higher churn likelihood include $PaperlessBilling$, $Monthly Charges$ (dollars), and $SeniorCitizen$. Higher monthly charges lead to higher churn rates along with customers who use paperless billing or are senior citizens.
 
 ```{r}
 #| label: fig-tenure-dist
@@ -297,23 +327,10 @@ ggplot(train, aes(x = tenure, fill = Churn)) +
        x = "Tenure (months)", y = "Count", fill = NULL)
 ```
 
-As seen before, tenure is very helpful in predicting whether a customer will churn. Customers are much more likely to churn in the first 12 months of their tenure. The graph above also indicates an imbalance in the tenure class. Tenure is most likely capped at 72 months which leads to many customers with this value. It could be helpful to balance this for training.
+As seen before, tenure is very helpful in predicting whether a customer will churn. @fig-tenure-dist shows the distributions of tenure, colored by whether a customer churned. Customers are much more likely to churn in the first 12 months of their tenure. The graph above also indicates an imbalance in the tenure class. $Tenure$ is most likely capped at 72 months which leads to many customers with this value. 
 
-```{r}
-#| label: fig-monthly-charges
-#| fig-cap: "Density plot of monthly charges by churn status."
-ggplot(train, aes(x = MonthlyCharges, fill = Churn)) +
-  geom_density(alpha = 0.55) +
-  scale_fill_manual(values = c("No" = RETAIN_COLOR, "Yes" = CHURN_COLOR),
-                    labels = c("Retained", "Churned")) +
-  labs(title = "Monthly charges — density by churn status",
-       subtitle = "Churners skew toward higher monthly charges",
-       x = "Monthly charges ($)", y = "Density", fill = NULL)
-```
 
-Churn is much more likely for users with higher monthly payments. There is a spike in the density graph from around 70 to 110 dollars, where customers are much more likely to churn.
-
-# 3. Statistical Analysis 
+# 3. Statistical Analysis
 
 ```{r}
 #| echo: false
@@ -391,13 +408,11 @@ x_train <- model.matrix(~ . -1, data = x_train)
 x_test  <- model.matrix(~ . -1, data = x_test)
 ```
 
-
 ## 3.1 Model Selection
 
 Three classification models were trained and evaluated to predict customer churn probability: logistic regression, random forest, and XGBoost. All models were trained on the preprocessed and scaled feature matrix described in Section 2.1.
 
-The model we chose to use was XGBoost. It was trained using the `xgboost` package with `objective = "binary:logistic"` and evaluated using log-loss (`eval_metric = "logloss"`). Key hyperparameters that were effective included a maximum tree depth of 6 and a learning rate (`eta`) of 0.1 over 100 boosting rounds. XGBoost works well with structured tabular data like in this project. It also handles class imbalance better than simpler methods. 
-
+The model we chose to use was XGBoost. It was trained using the `xgboost` package with `objective = "binary:logistic"` and evaluated using log-loss (`eval_metric = "logloss"`). Key hyperparameters that were effective included a maximum tree depth of 6 and a learning rate (`eta`) of 0.1 over 100 boosting rounds. XGBoost works well with structured tabular data like in this project. It also handles class imbalance better than simpler methods.
 
 ```{r}
 #| echo: false
@@ -443,7 +458,6 @@ xgb_results <- data.frame(
 )
 ```
 
-
 ```{r}
 #| echo: false
 #| label: tbl-overallResults
@@ -457,13 +471,11 @@ knitr::kable(head(xgb_results), format = "latex", booktabs = TRUE,
   add_header_above(c(" " = 2))
 ```
 
-
-The first 6 rows of our results table are shown in @tbl-overallResults. The results of our XGBoost returned the testing customer ID and the probability that the given customer in the testing dataset churned. 
+The first 6 rows of our results table are shown in @tbl-overallResults. The results of our XGBoost returned the testing customer ID and the probability that the given customer in the testing dataset churned.
 
 After submitting our required .csv file to the Kaggle competition, we recieved an ROC-AUC of about 0.9138. This means that our model was extremely good at distinguishing between customers that churned and customers that did not.
 
 To give a full interpretation of our ROC-AUC, if you randomly pick one customer who churned and one who stayed, there is a 91.38% chance our XGBoost model will assign a higher probability of churn to the one who actually left.
-
 
 ## 3.2 Feature Importance
 
@@ -477,51 +489,136 @@ importance_matrix <- xgb.importance(model = xgb_model)
 xgb.plot.importance(importance_matrix)
 ```
 
-@fig-featureImportance shows the top 15 predictors ranked. As shown, the top three variables that were most important in determining whether a customer churned were PaymentMethod, tenure, and Contract, all of which align with what we found in our EDA section.
+@fig-featureImportance shows the top 15 predictors ranked. As shown, the top three variables that were most important in determining whether a customer churned were $PaymentMethod$, $tenure$, and $Contract$, all of which align with what we found in our EDA section. At the bottom of the graph, we can also see which features were among the least important. These include $gender$ and $Partner$.
 
+## 3.3 Probability Analysis of Key Predictors
 
+To understand the reliability of the predictions of our XGBoost model, we analyze the predictions for churn across the top three most important variables. @tbl-confidence-intervals provides the estimated churn probability and a 95% confidence interval for the top three most influential variables: $Tenure$, $Contract$, and $PaymentMethod$.
+
+```{r}
+#| label: tbl-confidence-intervals
+#| echo: false
+#| tbl-cap: "95% Confidence Intervals for Churn Probability by Key Features"
+
+# 1. Tenure (Binned into years for clarity)
+tenure_stats <- train |>
+  mutate(Group = case_when(
+    tenure <= 12 ~ "0-1 Year",
+    tenure <= 24 ~ "1-2 Years",
+    tenure <= 48 ~ "2-4 Years",
+    TRUE ~ "4+ Years"
+  ), Variable = "Tenure") |>
+  group_by(Variable, Group) |>
+  summarise(
+    n = n(),
+    mean_churn = mean(Churn),
+    se = sqrt((mean_churn * (1 - mean_churn)) / n),
+    .groups = 'drop'
+  )
+
+# 2. Contract
+contract_stats <- train |>
+  rename(Group = Contract) |>
+  mutate(Variable = "Contract") |>
+  group_by(Variable, Group) |>
+  summarise(
+    n = n(),
+    mean_churn = mean(Churn),
+    se = sqrt((mean_churn * (1 - mean_churn)) / n),
+    .groups = 'drop'
+  )
+
+# 3. Payment Method
+payment_stats <- train |>
+  rename(Group = PaymentMethod) |>
+  mutate(Variable = "Payment Method") |>
+  group_by(Variable, Group) |>
+  summarise(
+    n = n(),
+    mean_churn = mean(Churn),
+    se = sqrt((mean_churn * (1 - mean_churn)) / n),
+    .groups = 'drop'
+  )
+
+# Combine and calculate CI
+ci_table <- bind_rows(tenure_stats, contract_stats, payment_stats) |>
+  mutate(
+    lower_ci = pmax(0, mean_churn - (1.96 * se)),
+    upper_ci = pmin(1, mean_churn + (1.96 * se)),
+    Probability = percent(mean_churn, accuracy = 0.1),
+    `95% CI` = paste0("[", percent(lower_ci, accuracy = 0.1), ", ", 
+                      percent(upper_ci, accuracy = 0.1), "]")
+  ) |>
+  select(Variable, Group, Probability, `95% CI`)
+
+knitr::kable(ci_table, format = "latex", booktabs = TRUE, longtable = FALSE) %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  collapse_rows(columns = 1, latex_hline = "major", valign = "middle")
+```
+
+For each variable, there is a group that is predicted to churn the highest:
+
+For $Tenure$, the highest risk is concentrated in the **0-1 Year** group. The predicted average probability that a customer will churn given that they have been with the company for 0-1 years is 49.4\%, after accounting for all other variables. We are 95\% that the true average probability that a customer will churn given that they have been with the company for 0-1 years is between 49.1\% and 49.6\%, after accounting for all other variables. In business terms, the shorter amount of time a customer is with the company, the more likely they are to churn. 
+
+For $Contract$, the highest risk is found in the **Month-to-month group**. The predicted average probability that a customer will churn given they are on a month-to-month contract is approximately 46.3%, after accounting for all other variables. We are 95% confident that the true average probability for this group lies between 45.9% and 46.6%, after accounting for all other variables. This confirms that a lack of long-term contractual obligation is a primary driver of customer churn. 
+
+For $Payment Method$, the highest risk group is **Electronic Check**. The predicted average probability that a customer will churn given this payment method is 44.8%, holding all other variables constant. We are 95% confident that the true average probability for these customers is between 44.4% and 45.2%, holding all other variables constant. This suggests that manual, non-automated payment methods are highly indicative of a customer's probability to leave.
 
 # 4. Conclusion & Results
 
 ## 4.1 Summary of Findings
 
-This project set out to answer the question: **What is the probability that a customer will churn given the customer's data?** Using the Kaggle Playground Series S6E3 dataset, we trained three classification models — logistic regression, random forest, and XGBoost — to estimate individual churn probabilities for each customer in the test set.
+This project set out to answer the question: **What is the probability that a customer will churn given the customer's data?** Using the Kaggle Playground Series S6E3 dataset, we successfully trained an XGBoost model to estimate individual churn probabilities for each customer in the test set.
 
-Through EDA, tenure was the strongest protective factor. The longer a customer remains with the company, the less likely they are to churn. Customers who subscribed to protective add-on services such as online security and tech support also churned at lower rates than those who did not.
+Through EDA and analysis, tenure was one of the strongest predictive factors. The longer a customer remains with the company, the less likely they are to churn. Customers who subscribed to protective add-on services such as online security and tech support also churned at lower rates than those who did not.
 
 ## 4.2 Model Performance
 
-XGBoost was selected as our primary model due to its strong performance on structured tabular data and its ability to handle the class imbalance present in this dataset (~26% churn rate). Predicted churn probabilities were generated for all customers in the test set and submitted to the Kaggle competition. Logistic regression served as an interpretable baseline, and random forest provided an additional comparison point.
+XGBoost was selected as our primary model due to its strong performance on structured tabular data and its ability to handle the class imbalance present in this dataset (\~26% churn rate). Predicted churn probabilities were generated for all customers in the test set and submitted to the Kaggle competition. We achieved a high ROC-AUC of about 0.9138, meaning our model is exceptional at distinguishing between customers who stay and those who leave.
 
 ## 4.3 Answering the Research Question
 
-The XGBoost model produces a churn probability between 0 and 1 for each customer. A higher predicted probability indicates a customer at greater risk of churning. In practice, a business could keep track of customers with a high to prioritize outreach and retention efforts. Another application could be to focus on improving aspects of the company where churning is more likely, or removing the option all together. The feature importance analysis confirms that tenure, contract type, and payment type are strong indicators of churn.
+The XGBoost model produces a churn probability between 0 and 1 for each customer. A higher predicted probability indicates a customer at greater risk of churning. Beyond individual predictions for each customer, our analysis identified groups with low tenure, shorter contracts, and those who pay using an electronic check to be more likely to churn.
+
+In practice, a business could keep track of customers with a high to prioritize outreach and retention efforts. Another application could be to focus on improving aspects of the company where churning is more likely, or removing the option all together. The feature importance analysis confirms that tenure, contract type, and payment type are strong indicators of churn.
 
 # 5. Additional Considerations
 
+```{=html}
 <!--
 ethical considerations, biases, etc.
 -->
+```
 
+Although this project used simulated data, there are still some considerations we need to address when it comes to ethics and bias:
+
+- While predicting churn helps businesses, it can lead to something called price discrimination. This means that if a model identifies a customer as unlikely to churn regardless of price, a company might withhold discounts from them or charge them higher prices that a customer that is at high risk for churning.
+- The dataset we use includes a variable that states whether or not a customer is a senior citizen. Depending on if the model constantly predicts higher churn for this demographic, businesses might prioritize them less, leading to age-based biases.
+- Churn is pulled from a moment in time. In a real-world scenario with real-world data, "total charges" and "tenure" would be perfectly correlated with when the data was pulled.
 
 # 6. References
 
+```{=html}
 <!--
 reference list
 -->
+```
 
-[1]“Predict Customer Churn,” @kaggle, 2026. https://www.kaggle.com/competitions/playground-series-s6e3 (accessed Apr. 28, 2026)‌ 
+\[1\]“Predict Customer Churn,” @kaggle, 2026. https://www.kaggle.com/competitions/playground-series-s6e3 (accessed Apr. 28, 2026)‌
 
-# Technical Appendix 
+# Technical Appendix
 
+```{=html}
 <!--
 code important to our analysis, but that we shouldn't include in the main body of the report. This will be like validation and other models we tried.
 -->
+```
 
 **Logistic Regression** was used as a baseline model. It was fit using `glm()` with `family = "binomial"`, producing predicted churn probabilities. This model is interpretable and provides a useful benchmark, but is likely to underperform on complex nonlinear relationships between predictors. This was the worst performing model
 
 ```{r}
-#| echo: false
+#| echo: true
+#| eval: false
 #| label: code-logisticreg
 # logistic regression
 log_model <- glm(
@@ -549,7 +646,8 @@ write.csv(log_results, "results_logistic.csv", row.names = FALSE)
 **Random Forest** was trained using the `randomForest` package with 100 trees (`ntree = 100`) and `mtry` set to the square root of the number of features, which is the standard default for classification tasks. Random forests capture nonlinear interactions and feature dependencies better than Logistic Regression would without much risk for overfitting.
 
 ```{r}
-#| echo: false
+#| echo: true
+#| eval: false
 #| label: code-randForest
 library(randomForest)
 y_train_yn <- factor(y_train, levels = c(0, 1), labels = c("No", "Yes"))
@@ -574,16 +672,17 @@ rf_results <- data.frame(
 write.csv(rf_results, "results_randomforest.csv", row.names = FALSE)
 ```
 
-
 \newpage
 
 ### R Script
 
+```{=html}
 <!--
 this is where all of our code will be outputted, because we don't want code chunks in the main body of our report.
 -->
+```
 
-```{r ref.label=c('front-matter', 'tbl-variables', 'tbl-variables2', 'color-settings', 'fig-churn-dist', 'fig-correlation', 'fig-churn-correlations', 'fig-tenure-dist', 'fig-monthly-charges', 'code-features', 'code-xgboost', 'tbl-overallResults', 'fig-featureImportance', 'code-logisticreg', 'code-randForest')}
+```{r ref.label=c('front-matter', 'tbl-variables', 'tbl-variables2', 'color-settings', 'fig-churn-dist', 'fig-correlation', 'fig-churn-correlations', 'fig-tenure-dist', 'fig-monthly-charges', 'code-features', 'code-xgboost', 'tbl-overallResults', 'fig-featureImportance', ' tbl-confidence-intervals')}
 #| echo: true
 #| eval: false
 
